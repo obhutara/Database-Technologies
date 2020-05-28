@@ -1,0 +1,334 @@
+/*
+Lab 1 report <Student_names and liu_id>
+*/
+
+/* All non code should be within SQL-comments like this */ 
+
+
+/*
+Drop all user created tables that have been created when solving the lab
+
+
+DROP TABLE IF EXISTS custom_table CASCADE;
+*/
+
+/* Have the source scripts in the file so it is easy to recreate!*/
+
+SOURCE company_schema.sql;
+SOURCE company_data.sql;
+
+SELECT name
+FROM jbemployee;	
+/*
+Lab 1 report <Omkar Bhutra (omkbh878) and Filip Klang (fil)>
+*/
+
+/*
+Drop all user created tables that have been created when solving the lab
+*/
+
+DROP TABLE IF EXISTS custom_table CASCADE;
+
+
+/* Have the source scripts in the file so it is easy to recreate!*/
+
+SOURCE company_schema.sql;
+SOURCE company_data.sql;
+
+/*
+Question 1:  List all employees, i.e. all tuples in the jbemployee relation.
+*/
+
+SELECT name
+FROM jbemployee;
+
+/* Show the output for every question.
++--------------------+
+| name               |
++--------------------+
+| Ross, Stanley      |
+| Ross, Stuart       |
+| Edwards, Peter     |
+| Thompson, Bob      |
+| Smythe, Carol      |
+| Hayes, Evelyn      |
+| Evans, Michael     |
+| Raveen, Lemont     |
+| James, Mary        |
+| Williams, Judy     |
+| Thomas, Tom        |
+| Jones, Tim         |
+| Bullock, J.D.      |
+| Collins, Joanne    |
+| Brunet, Paul C.    |
+| Schmidt, Herman    |
+| Iwano, Masahiro    |
+| Smith, Paul        |
+| Onstad, Richard    |
+| Zugnoni, Arthur A. |
+| Choy, Wanda        |
+| Wallace, Maggie J. |
+| Bailey, Chas M.    |
+| Bono, Sonny        |
+| Schwarz, Jason B.  |
++--------------------+
+25 rows in set (0.00 sec)
+
+*/ 
+
+/*
+Question 2:  List the name of all departments in alphabetical order. Note: by “name” we mean
+the name attribute for all tuples in the jbdept relation.
+*/
+
+
+SELECT name
+FROM jbdept
+ORDER BY name;
+
+/* Show the output for every question.
++------------------+
+| name             |
++------------------+
+| Bargain          |
+| Book             |
+| Candy            |
+| Children's       |
+| Children's       |
+| Furniture        |
+| Giftwrap         |
+| Jewelry          |
+| Junior Miss      |
+| Junior's         |
+| Linens           |
+| Major Appliances |
+| Men's            |
+| Sportswear       |
+| Stationary       |
+| Toys             |
+| Women's          |
+| Women's          |
+| Women's          |
++------------------+
+19 rows in set (0.00 sec)
+
+*/ 
+
+/*
+Question 3:  What parts are not in store, i.e. qoh = 0? (qoh = Quantity On Hand)
+*/
+
+SELECT name , qoh
+FROM jbparts
+WHERE qoh = 0;
+
+/* Show the output for every question.
++-------------------+------+
+| name              | qoh  |
++-------------------+------+
+| card reader       |    0 |
+| card punch        |    0 |
+| paper tape reader |    0 |
+| paper tape punch  |    0 |
++-------------------+------+
+4 rows in set (0.00 sec)
+
+*/ 
+
+/*
+Question 4:  Which employees have a salary between 9000 (included) and 10000 (included)?
+
+*/
+
+SELECT name,salary
+FROM jbemployee
+WHERE salary BETWEEN 9000 AND 10000;
+
+/* Show the output for every question.
++----------------+--------+
+| name           | salary |
++----------------+--------+
+| Edwards, Peter |   9000 |
+| Smythe, Carol  |   9050 |
+| Williams, Judy |   9000 |
+| Thomas, Tom    |  10000 |
++----------------+--------+
+4 rows in set (0.00 sec)
+*/ 
+
+/*
+Question 5:  What was the age of each employee when they started working (startyear)?
+
+*/
+SELECT name,(startyear - birthyear) AS Starting_Age
+FROM jbemployee;
+
+/* Show the output for every question.
++--------------------+--------------+
+| name               | Starting_Age |
++--------------------+--------------+
+| Ross, Stanley      |           18 |
+| Ross, Stuart       |            1 |
+| Edwards, Peter     |           30 |
+| Thompson, Bob      |           40 |
+| Smythe, Carol      |           38 |
+| Hayes, Evelyn      |           32 |
+| Evans, Michael     |           22 |
+| Raveen, Lemont     |           24 |
+| James, Mary        |           49 |
+| Williams, Judy     |           34 |
+| Thomas, Tom        |           21 |
+| Jones, Tim         |           20 |
+| Bullock, J.D.      |            0 |
+| Collins, Joanne    |           21 |
+| Brunet, Paul C.    |           21 |
+| Schmidt, Herman    |           20 |
+| Iwano, Masahiro    |           26 |
+| Smith, Paul        |           21 |
+| Onstad, Richard    |           19 |
+| Zugnoni, Arthur A. |           21 |
+| Choy, Wanda        |           23 |
+| Wallace, Maggie J. |           19 |
+| Bailey, Chas M.    |           19 |
+| Bono, Sonny        |           24 |
+| Schwarz, Jason B.  |           15 |
++--------------------+--------------+
+25 rows in set (0.00 sec)
+*/ 
+
+/*
+Question 6:  Which employees have a last name ending with “son”?
+
+*/
+
+SELECT name FROM jbemployee WHERE name LIKE '%son,%';
+
+/* Show the output for every question.
++---------------+
+| name          |
++---------------+
+| Thompson, Bob |
++---------------+
+1 row in set (0.00 sec)
+
+*/ 
+
+/*
+Question 7:  Which items (note items, not parts) have been delivered by a supplier called
+Fisher-Price? Formulate this query using a subquery in the where-clause.
+
+*/
+
+SELECT *
+FROM jbitem
+WHERE supplier=(SELECT id FROM jbsupplier WHERE name='Fisher-Price') ;
+
+/* Show the output for every question.
++-----+-----------------+------+-------+------+----------+
+| id  | name            | dept | price | qoh  | supplier |
++-----+-----------------+------+-------+------+----------+
+|  43 | Maze            |   49 |   325 |  200 |       89 |
+| 107 | The 'Feel' Book |   35 |   225 |  225 |       89 |
+| 119 | Squeeze Ball    |   49 |   250 |  400 |       89 |
++-----+-----------------+------+-------+------+----------+
+3 rows in set (0.00 sec)
+
+*/ 
+
+/*
+Question 8:  Formulate the same query as above, but without a subquery
+*/
+
+SELECT * 
+FROM jbitem 
+LEFT JOIN jbsupplier
+ON jbitem.supplier = jbsupplier.id
+WHERE jbsupplier.name='Fisher-Price';
+
+/*
++-----+-----------------+------+-------+------+----------+----+--------------+------+
+| id  | name            | dept | price | qoh  | supplier | id | name         | city |
++-----+-----------------+------+-------+------+----------+----+--------------+------+
+|  43 | Maze            |   49 |   325 |  200 |       89 | 89 | Fisher-Price |   21 |
+| 107 | The 'Feel' Book |   35 |   225 |  225 |       89 | 89 | Fisher-Price |   21 |
+| 119 | Squeeze Ball    |   49 |   250 |  400 |       89 | 89 | Fisher-Price |   21 |
++-----+-----------------+------+-------+------+----------+----+--------------+------+
+3 rows in set (0.00 sec)
+*/
+
+/*
+Question 9:  Show all cities that have suppliers located in them. Formulate this query using a
+subquery in the where-clause.
+*/
+
+SELECT * 
+FROM jbcity
+WHERE id IN (SELECT city FROM jbsupplier);
+
+/*
++-----+----------------+-------+
+| id  | name           | state |
++-----+----------------+-------+
+|  10 | Amherst        | Mass  |
+|  21 | Boston         | Mass  |
+| 100 | New York       | NY    |
+| 106 | White Plains   | Neb   |
+| 118 | Hickville      | Okla  |
+| 303 | Atlanta        | Ga    |
+| 537 | Madison        | Wisc  |
+| 609 | Paxton         | Ill   |
+| 752 | Dallas         | Tex   |
+| 802 | Denver         | Colo  |
+| 841 | Salt Lake City | Utah  |
+| 900 | Los Angeles    | Calif |
+| 921 | San Diego      | Calif |
+| 941 | San Francisco  | Calif |
+| 981 | Seattle        | Wash  |
++-----+----------------+-------+
+15 rows in set (0.00 sec)
+*/
+
+/*
+Question 10:  What is the name and color of the parts that are heavier than a card reader?
+Formulate this query using a subquery in the where-clause. (The SQL query must
+not contain the weight as a constant.)
+*/
+
+SELECT name, color 
+FROM jbparts
+WHERE weight > (SELECT weight FROM jbparts WHERE name = 'card reader');
+
+/*
++--------------+--------+
+| name         | color  |
++--------------+--------+
+| disk drive   | black  |
+| tape drive   | black  |
+| line printer | yellow |
+| card punch   | gray   |
++--------------+--------+
+4 rows in set (0.00 sec)
+*/
+
+/*
+Question 11: Formulate the same query as above, but without a subquery. (The query must not
+contain the weight as a constant.)
+*/
+
+SELECT a.name as name , a.color as color 
+FROM jbparts as a,jbparts as b
+WHERE a.weight>b.weight
+AND b.name = 'card reader';
+
+/*
++--------------+--------+
+| name         | color  |
++--------------+--------+
+| disk drive   | black  |
+| tape drive   | black  |
+| line printer | yellow |
+| card punch   | gray   |
++--------------+--------+
+4 rows in set (0.00 sec)
+*/
+

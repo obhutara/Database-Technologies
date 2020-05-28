@@ -1,0 +1,117 @@
+/* LAB 2 for Database technologies*/
+
+/*
+Question 3: Implement your extensions in the database by first creating tables, if any, then
+populating them with existing manager data, then adding/modifying foreign key constraints. 
+Do you have to initialize the bonus attribute to a value? Why?
+*/
+
+CREATE TABLE Manager (
+	id INT NOT NULL,
+	BonusSalary INT DEFAULT 0,
+	CONSTRAINT pk_id PRIMARY KEY(id),
+	CONSTRAINT fk_emp_id FOREIGN KEY(id) references jbemployee(id) 
+	);
+
+/*
+Query OK, 0 rows affected (0.06 sec)
+ */
+
+INSERT INTO Manager (id) 
+SELECT manager FROM jbemployee WHERE jbemployee.manager IS NOT NULL
+UNION 
+SELECT manager FROM jbdept WHERE jbdept.manager IS NOT NULL;
+
+/* 
+Query OK, 12 rows affected (0.04 sec)
+Records: 12  Duplicates: 0  Warnings: 0
+*/
+
+/*
+BonusSalary has to be initialized to a value, if not then it will be initialized to NULL which 
+has to be checked if they are NULL or not which is an extra step.
+*/
+
+/* Question 4 */
+
+UPDATE Manager
+SET BonusSalary = BonusSalary+10000
+WHERE id IN (SELECT manager FROM jbdept);
+
+/*  
+Query OK, 11 rows affected (0.00 sec)
+Rows matched: 11  Changed: 11  Warnings: 0
+*/
+
+/*
+Use alter table t1 drop foreign key constraint_name;
+and alter table t2 add constraint constraint_name foreign key (t2_attribute) references t1(t1_attribute); 
+to change existing foreign keys.
+ */
+ALTER TABLE jbemployee DROP FOREIGN KEY fk_emp_mgr;
+
+ALTER TABLE jbemployee 
+ADD CONSTRAINT fk_emp_mgr 
+FOREIGN KEY (manager) REFERENCES Manager (id);
+
+ALTER TABLE jbdept DROP FOREIGN KEY fk_dept_mgr;
+
+ALTER TABLE jbdept 
+ADD CONSTRAINT fk_dept_mgr
+FOREIGN KEY (manager) REFERENCES Manager (id);
+
+/* Question 5 */
+
+CREATE TABLE Customer (
+	id INT NOT NULL, 
+	name VARCHAR(40),
+	street_address VARCHAR(49),
+	city INT NOT NULL,
+	constraint pk_customer PRIMARY KEY (id),
+	constraint fk_city FOREIGN KEY (city) REFERENCES jbcity(id)
+);
+/* Query OK, 0 rows affected (0.06 sec) */
+
+
+CREATE TABLE Account (
+	account_no INT NOT NULL,
+	balance INT NOT NULL DEFAULT 0,
+	customer INT NOT NULL,
+	CONSTRAINT pk_account PRIMARY KEY (account_no),
+	CONSTRAINT fk_cust_acc FOREIGN KEY (customer) REFERENCES Customer (id)
+);
+
+
+/* Query OK, 0 rows affected (0.02 sec) */
+
+
+
+
+
+
+create table Withdraw (
+	id int,
+	sdate timestamp not null default current_timestamp,
+	amount int not null,
+	account int not null,
+	employee int not null,
+	primary key (id),
+	constraint fk_with_acc foreign key (account) references Account (account_no),
+	constraint fk_with_employee foreign key (employee) references jbemployee (id)
+);
+
+create table Deposit (
+	id int,
+	sdate timestamp not null default current_timestamp,
+	amount int not null,
+	account int not null,
+	employee int not null,
+	primary key (id),
+	constraint fk_depo_acc foreign key (account) references jbaccount (id),
+	constraint fk_depo_employee foreign key (employee) references jbemployee (id)
+);
+
+delete from jbsale;
+
+alter table jbdebit add constraint fk_debit_acc foreign key (account) references jbaccount (id);
+

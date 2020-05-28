@@ -1,0 +1,21 @@
+Reservation number:
+Phone number -> Passenger name
+email -> Passenger name
+
+Year Factor:
+Year -> Profit factor
+
+Booking:
+Booking id -> Total price
+
+CreditCard:
+Credit card no -> First Name,Last Name
+
+Route:
+Route id -> Departure time, Weekday Factor
+
+Passengers:
+Ticket no -> Booking no
+
+Weekday:
+Day of week -> Weekday factor

@@ -1,0 +1,710 @@
+-- Running this file resets the databse back to an empty but complete state, after this any of the tests can be run.
+-- After each test, make sure to run this file again to ensure that the databse is empty, ready for the next test.
+
+SOURCE q2.sql;
+SOURCE q3.sql;
+SOURCE q4.sql;
+SOURCE q5.sql;
+SOURCE q6.sql;
+SOURCE q7.sql;
+
+
+/*
+        TDDD37 - Lab 4
+    Filip Klang, filkl010
+    Omkar Bhurta, omkbh878
+*/
+
+
+-- DROP TABLE IF EXISTS tableName
+DROP TABLE IF EXISTS reservation_passenger;
+DROP TABLE IF EXISTS booking_passenger;
+DROP TABLE IF EXISTS booking;
+DROP TABLE IF EXISTS transaction_t;
+DROP TABLE IF EXISTS contact;
+DROP TABLE IF EXISTS passenger;
+DROP TABLE IF EXISTS reservation;
+DROP TABLE IF EXISTS flight;
+DROP TABLE IF EXISTS weekly_schedule;
+DROP TABLE IF EXISTS day_week;
+DROP TABLE IF EXISTS year_pricing;
+DROP TABLE IF EXISTS route_t;
+DROP TABLE IF EXISTS airport;
+
+
+
+-- Question 2
+CREATE TABLE airport (
+	airport_code varchar(3) NOT NULL,
+	airport_name varchar(30) NOT NULL,
+    country varchar(30) NOT NULL,
+
+    PRIMARY KEY(airport_code)
+);
+
+CREATE TABLE route_t (
+    route_id int AUTO_INCREMENT,
+    route_year int NOT NULL,
+    airport_from varchar(3) NOT NULL,
+    airport_to varchar(3) NOT NULL,
+    route_price float NOT NULL,
+
+    
+    PRIMARY KEY (route_id, route_year),
+
+    CONSTRAINT fk_airport_route_from 
+        FOREIGN KEY (airport_from) 
+        REFERENCES airport(airport_code)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_airport_route_to 
+        FOREIGN KEY (airport_to) 
+        REFERENCES airport(airport_code)
+        ON DELETE CASCADE
+);
+
+
+CREATE TABLE year_pricing (
+    year_no int NOT NULL,
+    profitfactor float NOT NULL
+);
+
+CREATE TABLE day_week (
+    day_of_week varchar(10) NOT NULL,
+    weekday_factor float NOT NULL,
+    year_no int NOT NULL,
+
+    PRIMARY KEY(day_of_week, year_no)
+);
+
+
+CREATE TABLE weekly_schedule (
+    schedule_id int AUTO_INCREMENT PRIMARY KEY,
+    departure_time time NOT NULL,
+    schedule_year int NOT NULL,
+    route_id int NOT NULL,
+    day_of_week varchar(20) NOT NULL,
+
+    CONSTRAINT fk_schedule_route
+        FOREIGN KEY (route_id)
+        REFERENCES route_t(route_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_day_of_week_weekday
+        FOREIGN KEY (day_of_week)
+        REFERENCES day_week(day_of_week)
+);
+
+
+CREATE TABLE flight (
+    flight_no int AUTO_INCREMENT,
+    booked_seats int NOT NULL DEFAULT 0,
+    schedule_id int NOT NULL,
+    week_no int NOT NULL,
+
+    PRIMARY KEY(flight_no, week_no),
+
+    CONSTRAINT fk_flight_schedule
+        FOREIGN KEY (schedule_id)
+        REFERENCES weekly_schedule(schedule_id)
+);
+
+
+CREATE TABLE reservation (
+    reservation_no int AUTO_INCREMENT PRIMARY KEY,
+    reserved_seat_count int NOT NULL,
+    flight_no int NOT NULL,
+
+    CONSTRAINT fk_reservation_flight_no
+        FOREIGN KEY (flight_no)
+        REFERENCES flight(flight_no)
+);
+
+
+CREATE TABLE passenger (
+    passport_id int NOT NULL PRIMARY KEY,
+    name varchar(60) NOT NULL
+);
+
+CREATE TABLE reservation_passenger (
+    reservation_no INT,
+    passport_id INT,
+
+    PRIMARY KEY(reservation_no, passport_id),
+
+    CONSTRAINT fk_reservation_passenger_reservation
+        FOREIGN KEY (reservation_no)
+        REFERENCES reservation(reservation_no)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_reservation_passenger_passenger
+        FOREIGN KEY (passport_id)
+        REFERENCES passenger(passport_id)
+);
+
+
+CREATE TABLE contact (
+    reservation_no int NOT NULL PRIMARY KEY,
+    passport_id int NOT NULL,
+    email varchar(30) NOT NULL,
+    phone_no bigint NOT NULL,
+
+    CONSTRAINT fk_contact_reservation
+        FOREIGN KEY (reservation_no)
+        REFERENCES reservation(reservation_no)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_contact_passenger
+        FOREIGN KEY (passport_id)
+        REFERENCES passenger(passport_id)
+        ON DELETE CASCADE
+);
+
+
+CREATE TABLE transaction_t (
+    reservation_no int NOT NULL PRIMARY KEY,
+    credit_card_no bigint NOT NULL,
+    cardholder_name varchar(60) NOT NULL,
+
+    CONSTRAINT fk_transaction_reservation
+        FOREIGN KEY (reservation_no)
+        REFERENCES reservation(reservation_no)
+        ON DELETE CASCADE
+);
+
+
+CREATE TABLE booking (
+    booking_no int AUTO_INCREMENT PRIMARY KEY,
+    total_price float NOT NULL,
+    reservation_no int NOT NULL,
+
+    CONSTRAINT fk_booking_reservation
+        FOREIGN KEY (reservation_no)
+        REFERENCES reservation(reservation_no)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE booking_passenger (
+    booking_no int NOT NULL,
+    passport_id int NOT NULL,
+    ticket_number int NOT NULL UNIQUE,
+
+    PRIMARY KEY(booking_no, passport_id),
+
+    CONSTRAINT fk_booking_passenger_booking
+        FOREIGN KEY (booking_no) 
+        REFERENCES booking(booking_no),
+
+    CONSTRAINT fk_booking_passenger_passenger
+        FOREIGN KEY (passport_id)
+        REFERENCES passenger(passport_id)
+);
+
+
+DROP PROCEDURE IF EXISTS addYear;
+DROP PROCEDURE IF EXISTS addDay;
+DROP PROCEDURE IF EXISTS addDestination;
+DROP PROCEDURE IF EXISTS addRoute;
+DROP PROCEDURE IF EXISTS addFlight;
+
+DELIMITER //
+ 
+CREATE PROCEDURE addYear(IN year_no int, IN profitfactor float)
+BEGIN
+    INSERT INTO year_pricing(year_no, profitfactor) VALUES (year_no,  profitfactor);
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE addDay(IN year_no int, IN day_of_week varchar(10),IN weekday_factor float)
+BEGIN
+    INSERT INTO day_week(year_no, weekday_factor,day_of_week) VALUES (year_no,  weekday_factor,day_of_week);
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE addDestination(IN airport_code varchar(3), IN airport_name varchar(30),IN country varchar(30))
+BEGIN
+    INSERT INTO airport(airport_code, airport_name,country) VALUES (airport_code, airport_name,country);
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE addRoute(IN airport_from varchar(3), IN airport_to varchar(3), IN route_year int, IN route_price float)
+BEGIN
+    INSERT INTO route_t(airport_from, airport_to,route_year,route_price) VALUES (airport_from, airport_to,route_year,route_price);
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE addFlight(IN DestinationFrom varchar(3), IN DestinationTO varchar(3), IN schedule_year int, day_of_week varchar(20), IN departure_time time)
+BEGIN
+    DECLARE Prev_ID INT;
+    DECLARE current_routeID INT;
+    DECLARE current_week INT DEFAULT 1;
+
+    SELECT route_id INTO current_routeID 
+	FROM route_t
+	WHERE route_year=schedule_year AND DestinationTO=airport_to AND DestinationFrom=airport_from;
+
+    INSERT INTO weekly_schedule(route_id, schedule_year, departure_time, day_of_week) VALUES (current_routeID, schedule_year,departure_time,day_of_week);
+    
+    SET Prev_ID = LAST_INSERT_ID(); 
+	WHILE current_week <= 52 DO
+        INSERT INTO flight(week_no, schedule_id) VALUES (current_week, Prev_ID);
+	    SET current_week = current_week + 1;
+	END WHILE;
+
+END //
+DELIMITER ;
+
+
+DROP FUNCTION IF EXISTS calculateFreeSeats;
+DROP FUNCTION IF EXISTS calculatePrice;
+
+
+DELIMITER //
+CREATE FUNCTION calculateFreeSeats ( flight_number INT )
+RETURNS INT
+BEGIN
+    RETURN 40 - (SELECT booked_seats FROM flight WHERE flight_no = flight_number);
+END; //
+
+DELIMITER ;
+
+
+DELIMITER //
+CREATE FUNCTION calculatePrice ( flight_number INT )
+RETURNS FLOAT
+BEGIN
+
+    DECLARE booked_seats int;
+    DECLARE weekday_factor float;
+    DECLARE route_price float;
+    DECLARE profitfactor float;
+
+    -- We get the year, weekday
+    SELECT  flight.booked_seats, route_t.route_price, year_pricing.profitfactor, day_week.weekday_factor INTO booked_seats, route_price, profitfactor, weekday_factor
+    FROM flight 
+    INNER JOIN weekly_schedule ON flight.schedule_id = weekly_schedule.schedule_id
+    INNER JOIN route_t ON weekly_schedule.route_id = route_t.route_id
+    INNER JOIN year_pricing ON year_pricing.year_no = weekly_schedule.schedule_year
+    INNER JOIN day_week ON weekly_schedule.day_of_week = day_week.day_of_week
+    
+    WHERE flight.flight_no = flight_number;
+
+    RETURN route_price * weekday_factor * ((booked_seats + 1)/40) * profitfactor;
+END; //
+
+DELIMITER ;
+
+-- Might need to make a composite key on day_week as there can be prices for different years of the same weekday, e.g. Monday 2011 and Monday 2012
+/*INNER JOIN day_week ON weekly_schedule.day_of_week = day_week.day_of_week AND weekly_schedule.schedule_year = year_no*/
+
+DROP TRIGGER IF EXISTS assignTicketNumber;
+
+DROP PROCEDURE IF EXISTS bookPassenger;
+
+DELIMITER //
+CREATE TRIGGER assignTicketNumber
+AFTER INSERT ON booking 
+FOR EACH ROW
+BEGIN
+
+    DECLARE numberOfPassengers int DEFAULT 0;
+    DECLARE CTR int DEFAULT 0;
+    DECLARE flightNumber int DEFAULT 0;
+
+    SELECT COUNT(passport_id) 
+    INTO numberOfPassengers 
+    FROM reservation_passenger 
+    WHERE NEW.reservation_no = reservation_no;
+
+    WHILE CTR < numberOfPassengers DO
+        CALL bookPassenger(NEW.reservation_no, NEW.booking_no);
+        SET CTR = CTR + 1;
+    END WHILE;
+
+    -- We want to update the amount of booked seats for the flight which can differ from the amount of reserved seats for a booking. 
+    -- A flight could have a reservation with 10 reserved seats but then only have one person payed for.
+    SELECT flight_no INTO flightNumber FROM reservation WHERE reservation_no = NEW.reservation_no; 
+    UPDATE flight SET booked_seats = booked_seats + numberOfPassengers WHERE flightNumber = flight_no;
+
+END //
+DELIMITER ;
+
+
+
+DELIMITER //
+CREATE PROCEDURE bookPassenger (reservation_nr int, booking_nr int)
+BEGIN
+
+    DECLARE passportNumber int DEFAULT 0;
+
+    -- We need to move a single passenger from the reservation-passenger list to the booking-passenger list in order to assign a unique ticket number.
+    SELECT passport_id INTO passportNumber
+    FROM reservation_passenger 
+    WHERE reservation_nr = reservation_no
+    LIMIT 1;
+
+    -- If no more passengers exist for this booking it means that all of them have already been moved to booking and assigned a ticket number.
+    IF passportNumber = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'All passangers for this booking have already been given a ticket number';
+    END IF;
+
+    -- We delete the passenger from reservation_passenger and add them to booking_passenger
+    DELETE FROM reservation_passenger 
+    WHERE passport_id = passportNumber;
+
+    INSERT INTO booking_passenger VALUES (booking_nr, passportNumber, rand()*(100000 - 100) + 100);
+
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS addReservation;
+DROP PROCEDURE IF EXISTS addPassenger;
+DROP PROCEDURE IF EXISTS addContact;
+DROP PROCEDURE IF EXISTS addPayment;
+
+DELIMITER //
+ 
+CREATE PROCEDURE addReservation(departure_airport_code varchar(3), arrival_airport_code varchar(3), schedule_year int, week int, day_of_week varchar(11), time_t time, number_of_passengers int, OUT output_reservation_nr int)
+BEGIN
+    DECLARE local_route_id int DEFAULT 0;
+    DECLARE local_schedule_id int DEFAULT 0;
+    DECLARE local_flight_no int DEFAULT 0;
+    DECLARE local_booked_seats int DEFAULT 0;
+
+    -- We get our route_id to help us find the flight
+    SELECT route_id INTO local_route_id 
+    FROM route_t 
+    WHERE airport_from = departure_airport_code
+    AND airport_to = arrival_airport_code
+    AND schedule_year = route_year;
+
+    IF local_route_id = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'There exist no flight for the given route, date and time';
+    END IF;
+
+    SELECT schedule_id INTO local_schedule_id
+    FROM weekly_schedule
+    WHERE local_route_id = weekly_schedule.route_id
+    AND time_t = weekly_schedule.departure_time
+    AND day_of_week = weekly_schedule.day_of_week;
+
+    IF local_schedule_id = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'There exist no flight for the given route, date and time';
+    END IF;
+
+    SELECT flight_no, booked_seats INTO local_flight_no, local_booked_seats
+    FROM flight
+    WHERE local_schedule_id = flight.schedule_id
+    AND week = flight.week_no;
+
+    -- Add error checking here, for the number of seats
+    IF number_of_passengers > calculateFreeSeats(local_flight_no) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'There are not enough seats available on the chosen flight';
+    END IF;
+    
+    INSERT INTO reservation VALUES(NULL, number_of_passengers, local_flight_no);
+
+    -- This simply assigns the last inserted id to the output variable in order for the frontend to retreive it.
+    SET output_reservation_nr = LAST_INSERT_ID();
+
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE addPassenger(reservation_nr int, passport_number int, passenger_name varchar(30))
+BEGIN
+    DECLARE passengerExist int DEFAULT 0;
+    DECLARE reservationExists int DEFAULT 0;
+    DECLARE paymentMade int DEFAULT 0;
+
+    -- Check if the reservation exists
+    SELECT reservation_no INTO reservationExists 
+    FROM reservation 
+    WHERE reservation_no = reservation_nr;
+
+    IF reservationExists = 0 THEN 
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The given reservation number does not exist';
+    END IF;
+
+    -- Check if the reservation has already been paid for, no further changes can be made.
+    SELECT reservation_no INTO paymentMade 
+    FROM transaction_t 
+    WHERE reservation_no = reservation_nr;
+
+    IF paymentMade != 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot add more passengers, reservation has already been paid for';
+    END IF;
+
+    -- Check if the passenger already exists in passenger table
+    SELECT passport_id INTO passengerExist FROM passenger WHERE passport_number = passport_id;
+    IF passengerExist = 0 THEN
+        INSERT INTO passenger VALUES (passport_number, passenger_name);
+    END IF;
+
+    -- Add try catch here for errors like invalid reservation number, now it throws generic error.
+    INSERT INTO reservation_passenger VALUES (reservation_nr, passport_number);
+END //
+
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE addContact (reservation_nr int, passport_number int, email varchar(30), phone_number bigint(20))
+BEGIN
+
+    DECLARE reservationExists int DEFAULT 0;
+    DECLARE passengerExists int DEFAULT 0;
+
+    -- In order to do separate error messages, we first check if reservation exists and then if the passanger is registered to that reservation
+    SELECT reservation_no INTO reservationExists 
+    FROM reservation 
+    WHERE reservation_no = reservation_nr;
+
+    SELECT passport_id INTO passengerExists 
+    FROM reservation_passenger 
+    WHERE reservation_no = reservation_nr AND passport_id = passport_number;
+
+    IF reservationExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The given reservation number does not exist';
+    END IF;
+
+    IF passengerExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The person is not a passenger of the reservation';
+    END IF;
+
+    -- If we get here, the passenger exists within the given reservation, we can add the contact.
+    INSERT INTO contact VALUES (reservation_nr, passport_number, email, phone_number);
+
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE addPayment (reservation_nr int, cardholder_name varchar(60), credit_card_number bigint(20))
+BEGIN
+
+    DECLARE reservationExists int DEFAULT 0;
+    DECLARE passengerExists int DEFAULT 0;
+    DECLARE contactExists int DEFAULT 0;
+
+    
+    DECLARE reservedSeats int;
+    DECLARE availableSeats int;
+
+    DECLARE reservationSeatPrice int;
+
+    -- Check if reservation exists
+    SELECT reservation_no INTO reservationExists 
+    FROM reservation 
+    WHERE reservation_no = reservation_nr;
+
+    IF reservationExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The given reservation number does not exist';
+    END IF;
+
+    -- Check if the reservation has a contact passanger, in order to proceed with payment
+    SELECT passport_id INTO contactExists 
+    FROM contact 
+    WHERE reservation_no = reservation_nr;
+
+    IF contactExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'The reservation has no contact yet';
+    END IF;
+
+    -- Check if the number of reserved seats still exist
+    -- The example adds more passangers then initially reserved seats?
+
+    SELECT COUNT(*) INTO reservedSeats
+    FROM reservation_passenger 
+    WHERE reservation_no = reservation_nr;
+
+    IF reservedSeats > calculateFreeSeats( (SELECT flight_no FROM reservation WHERE reservation_no = reservation_nr)) THEN
+        DELETE FROM reservation WHERE reservation_no = reservation_nr;
+        
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'There are not enough seats available on the flight anymore, deleting reservation';
+    
+    ELSE
+    -- if we get here the payment is made and we want to add the credentials to the DB and also confirm the booking.
+        INSERT INTO transaction_t VALUES (reservation_nr, credit_card_number, cardholder_name);
+
+        -- We need to calculate the total price for the booking
+        SET reservationSeatPrice = calculatePrice( (SELECT flight_no FROM reservation WHERE reservation_no = reservation_nr) );
+        INSERT INTO booking VALUES (NULL, reservationSeatPrice*reservedSeats, reservation_nr);
+        SELECT "Booking confirmed!" as "Message";
+    END IF;
+END //
+DELIMITER ;         
+
+
+DROP VIEW IF EXISTS allFlights;
+
+-- departure_city_name, destination_city_name, departure_time, departure_day, departure_week, 
+-- departure_year,  nr_of_free_seats, current_price_per_seat.
+
+CREATE VIEW allFlights AS 
+SELECT 
+    airport_from.airport_name AS departure_city_name,
+    airport_to.airport_name AS destination_city_name,
+    weekly_schedule.departure_time AS departure_time,
+    weekly_schedule.day_of_week AS departure_day,
+    flight.week_no AS departure_week,
+    weekly_schedule.schedule_year AS departure_year,
+    calculateFreeSeats(flight.flight_no) AS nr_of_free_seats,
+    calculatePrice(flight.flight_no) AS current_price_per_seat
+
+FROM flight 
+INNER JOIN weekly_schedule ON flight.schedule_Id = weekly_schedule.schedule_id
+INNER JOIN route_t ON weekly_schedule.route_id = route_t.route_id
+INNER JOIN airport AS airport_from ON route_t.airport_from = airport_from.airport_code
+INNER JOIN airport AS airport_to ON route_t.airport_to = airport_to.airport_code
+
+/*
+Answer the following theoretical questions
+
+a) How can you protect the credit card information in the database from hackers?
+    To protect credit card data one can not use the approach of storing passwords where a one-way
+    hash function can be used as for credit cards the data needs to be retrieved to enable future usage.
+
+    There are, without going into too much detail a general flow that can be followed when storing
+    sensetive information that should be able to be acquried in the future:
+
+    Encrypt the sensetive data using a symmetrical crypto (like AES256) and a strong key.
+    (This could essentially be enough already assuming that the server holding the key is not compromised when the credit card information is leaked)
+
+    Furthermore, additional security can be added by using the user password as additional security, meaning the server can never reveal the information by the key alone (meaning a compromised key will still not reveal the user password)
+    The key can then be co-created by using the user password (NOT THE STORED PASSWORD HASH) upon login.
+
+
+b) Give three advantages of using stored procedures in the database (and thereby execute them on the server) instead of writing the same functions in the front-end of the system (in for example java-script on a web-page)
+
+    1) Security. Some of the functions written as procedures could be easily modified if written with client-side JavaScript (Never trust the client).
+    2) Perfomance. It reduces the amount of information that is sent and therefore enchances performance (especially for devices with slow connection speed). 
+    3) Complexity. Using stored procedures one can do much more complex queries compared to what can be done in javascript without a lot of code and/or communication with the database to retreive such data
+*/
+
+/*
+    Open two MySQL sessions. We call one of them A and the other one B. Write START TRANSACTION; in both terminals
+
+    a) In session A, add a new reservation
+        Done (However, used year_pricing instead, easier to do from command line).
+    
+    b) Is this reservation visible in session B? Why? Why not? 
+        SELECT * FROM year_pricing; @Terminal 2 => "The transaction is not visible because it has not yet been commited by @Terminal 1"
+
+    c) What happens if you try to modify the reservation from A in B? Explain what happens and why this happens and how this relates to the concept of isolation of transactions.
+        If @Terminal 1 starts a transaction and executes addYear(parameters) without commiting while @Terminal 2 executes "UPDATE year_pricing SET profitfactor=4" it will hold @Terminal 2 until @Terminal 1 is done with its transaction (unlocks) by either commiting or rolling back
+        This ensures data completeness and assures that no dirty-reads/modifications are made.
+
+*/
+
+/******************************************************************************************
+ Question 10, concurrency
+ This is the first of two scripts that tests that the BryanAir database can handle concurrency.
+ This script simply fills the database with a relevant flight used by the other script. Note
+ that this script only should be run in one of the terminals.
+**********************************************************************************************/
+SELECT "Testing answer for 10" as "Message";
+SELECT "Filling database with flights, should only be run in one of the terminals" as "Message";
+/*Fill the database with data */
+CALL addYear(2010, 2.3);
+CALL addDay(2010,"Monday",1);
+CALL addDestination("MIT","Minas Tirith","Mordor");
+CALL addDestination("HOB","Hobbiton","The Shire");
+CALL addRoute("MIT","HOB",2010,2000);
+CALL addFlight("MIT","HOB", 2010, "Monday", "09:00:00");
+
+
+/******************************************************************************************
+ Question 10, concurrency
+ This is the second of two scripts that tests that the BryanAir database can handle concurrency.
+ This script sets up a valid reservation and tries to pay for it in such a way that at most
+ one such booking should be possible (or the plane will run out of seats). This script should
+ be run in both terminals, in parallel.
+**********************************************************************************************/
+SELECT "Testing script for Question 10, Adds a booking, should be run in both terminals" as "Message";
+SELECT "Adding a reservations and passengers" as "Message";
+CALL addReservation("MIT","HOB",2010,1,"Monday","09:00:00",21,@a);
+CALL addPassenger(@a,00000001,"Saruman");
+CALL addPassenger(@a,00000002,"Orch1");
+CALL addPassenger(@a,00000003,"Orch2");
+CALL addPassenger(@a,00000004,"Orch3");
+CALL addPassenger(@a,00000005,"Orch4");
+CALL addPassenger(@a,00000006,"Orch5");
+CALL addPassenger(@a,00000007,"Orch6");
+CALL addPassenger(@a,00000008,"Orch7");
+CALL addPassenger(@a,00000009,"Orch8");
+CALL addPassenger(@a,00000010,"Orch9");
+CALL addPassenger(@a,00000011,"Orch10");
+CALL addPassenger(@a,00000012,"Orch11");
+CALL addPassenger(@a,00000013,"Orch12");
+CALL addPassenger(@a,00000014,"Orch13");
+CALL addPassenger(@a,00000015,"Orch14");
+CALL addPassenger(@a,00000016,"Orch15");
+CALL addPassenger(@a,00000017,"Orch16");
+CALL addPassenger(@a,00000018,"Orch17");
+CALL addPassenger(@a,00000019,"Orch18");
+CALL addPassenger(@a,00000020,"Orch19");
+CALL addPassenger(@a,00000021,"Orch20");
+CALL addContact(@a,00000001,"saruman@magic.mail",080667989);
+SELECT SLEEP(5); 
+SELECT booked_seats from flight where week_no = 1;
+SELECT "Making payment, supposed to work for one session and be denied for the other" as "Message";
+LOCK TABLES flight READ, reservation WRITE,contact WRITE, booking WRITE, transaction_t WRITE, year_pricing READ, route_t READ, day_week READ, weekly_schedule READ;
+SELECT SLEEP(2);
+CALL addPayment (@a, "Sauron",7878787878);
+SELECT SLEEP(2);
+UNLOCK TABLES;
+SELECT "Nr of free seats on the flight (should be 19 if no overbooking occured, otherwise -2): " as "Message", 40 -(SELECT booked_seats from flight where week_no = 1) as "nr_of_free_seats";
+COMMIT;
+
+/*Question 10 a*/
+/*
+Overbooking did not occur when the test scripts were executed.
+21 seats were booked through terminal 1, therefore when booking of
+additional seats were attempted it failed to add more seat.
+*/
+
+/*Question 10 b*/
+/*
+If both the payment's are made in parallel and pass the check:
+number_of_passengers > (calculateFreeSeats(flight_number))
+then both payment's made will receive a return of available seats
+and will be able to add a reservation causing a overbooking to
+occur in theory.
+*/
+
+/*Question 10 c*/
+/*
+Using SELECT sleep(5); can achieve an overbooking when both the scripts
+are running in parallel when the table locking and unlocking commands are not used.
+*/
+
+/*Question 10 d*/
+/*
+Using LOCK TABLES, as it will Lock all the tables on the server, access to any other table will be restricted until used by the first table. therefore, the first payment can be made and then UNLOCK TABLES command can be used before making the second payment. Read, write is used to specify the tables to be locked and commit is used at the end to finalise the changes.
+*/
+
+/*
+Secondary Index:
+BookingNumber and PassportId are used as foreign keys in the table Booking_Passenger which is able form a link between Passenger and Booking tables. The Ticket Number is used as a Secondary Index.
+This can increase the speed of retrieval of the record whereas using the former fields would be slower.
+*/
+
